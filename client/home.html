@@ -1,0 +1,386 @@
+<!--home.html-->
+<!DOCTYPE html>
+<html id="home">
+<!--
+    WARNING! Make sure that you match all Quasar related
+    tags to the same version! (Below it's "@1.12.8")
+  -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<head>
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@2.1.5/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+  </head>
+
+<!-- Notice lang="sass" -->
+<style lang="sass">
+  .q-pa-xs {
+    padding: 1px 1px;
+  }
+
+  .q-checkbox__inner {
+    font-size: 25px;
+  }
+
+  .q-table tbody td,
+  .q-table thead tr {
+    height: 32px;
+    padding: 3px 8px;
+  }
+</style>
+
+<body>
+  <div id="q-app" class="q-pa-md">
+
+    <q-layout view="hHh lpR fFf" container style="height: 900px" class="shadow-2 rounded-borders">
+
+      <!-- header / toolbar -->
+      <q-header class="bg-blue">
+        <q-toolbar inset>
+          <q-btn type="a" href="/private/home" :icon="'home'"><q-tooltip>Home</q-tooltip></q-btn>
+          <q-btn type="a" href="/admin" :icon="'supervised_user_circle'"><q-tooltip>Admin</q-tooltip></q-btn>
+
+          <q-toolbar-title>
+            <strong>{{title}}</strong>
+          </q-toolbar-title>
+
+          <q-space></q-space>
+
+          <q-chip>
+            <q-avatar>
+              <q-img v-bind:src="me.avatar">
+            </q-avatar>
+            {{ me.username }}
+          </q-chip>
+
+          <q-btn type="a" href="/private/me" :icon="'assignment_ind'"></q-btn>
+          <q-btn type="a" href="/log-out" :icon="'logout'"></q-btn>
+        </q-toolbar>
+      </q-header>
+
+      <q-page-container>
+        <q-page padding>
+
+          <!-- Button-Zeile für 0 - Tabelle -->
+          <div class="row">
+            <q-space></q-space>
+            <q-select flat dense v-model="table_field" hint="table" outlined flat :options="cat_table_field"
+              class="q-ml-sm" @update:model-value ="onSearch()">
+            </q-select>
+
+            <q-input flat dense v-model="search" hint="field:value - Example 'username:admin'" style="min-width: 50%;"
+              outlined flat clearable class="q-ml-sm">
+              <template v-slot:after>
+                <q-btn flat @click="onSearch()" icon="search" color="primary"></q-btn>
+              </template>
+            </q-input>
+
+            <q-input flat dense v-model="maxline" hint="max" style="max-width: 50px;" outlined flat class="q-ml-sm">
+            </q-input>
+          </div>
+
+          <div>
+
+            <!-- Tablle für 0 - Tabelle -->
+            <q-table style="height: 740px;" title="Data" :rows="data" row-key="id"
+              no-data-label="I didn't find anything" :separator="separator" :loading="loading" :filter="filter"
+              selection="single" v-model:selected="selected" virtual-scroll :rows-per-page-options="[0]">
+              <template v-slot:top-left>
+                <q-text>Data</q-text>
+                <q-btn icon="read_more" flat round dense @click="onDetail();" class="q-ml-sm" color="primary">
+                  <q-tooltip>Detail Element</q-tooltip>
+                </q-btn>
+              </template>
+
+              <template v-slot:top-right="props">
+
+                <q-input dense debounce="300" v-model="filter" placeholder="Filter" outlined clearable flat
+                  class="q-ml-sm">
+                  <template v-slot:append>
+                    <q-icon name="filter_alt"></q-icon>
+                  </template>
+                </q-input>
+
+                <q-space></q-space>
+
+                <q-space></q-space>
+
+                <q-btn icon-right="archive" no-caps @click="exportTable" flat class="q-ml-sm" color="primary">
+                  <q-tooltip>CSV Export</q-tooltip>
+                </q-btn>
+                <q-btn :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'" flat round dense
+                  @click="props.toggleFullscreen" class="q-ml-sm" color="primary"></q-btn>
+
+              </template>
+            </q-table>
+
+          </div>
+
+          <!-- subdialog upload-->
+          <q-dialog v-model="dialogUser" persistent>
+            <q-card style="min-width: 500px; height: 460px;">
+              <q-card-section>
+                <div class="text-h6">User Data</div>
+                <div class="q-gutter-md col items-start">
+                  <q-input v-if="userData.id != ''" v-model="userData.username" label="username" readonly></q-input>
+                  <q-input v-if="userData.id == ''" v-model="userData.username" label="username" readonly></q-input>
+                  <q-input v-model="userData.avatar" label="avatar" readonly></q-input>
+                  <q-input v-model="userData.role" label="role" readonly></q-input>
+                  <q-input v-model="userData.lastLogin" label="lastLogin" readonly></q-input>
+                  <q-input v-model="userData.modified" label="modified at" readonly></q-input>
+                </div>
+              </q-card-section>
+              <q-card-actions align="right" class="text-primary">
+                <div v-show="idle">
+                  <q-spinner-hourglass color="primary" size="2em"></q-spinner-hourglass>
+                </div>
+                <q-space></q-space>
+                <q-btn label="Cancel" v-close-popup color="primary"></q-btn>
+              </q-card-actions>
+            </q-card>
+          </q-dialog>
+
+  </div>
+
+  </q-page>
+  </q-page-container>
+
+  </q-layout>
+
+  <!--/div-->
+  </div>
+
+  <!-- Add the following at the end of your body tag -->
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quasar@2.1.0/dist/quasar.umd.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quasar@2.1.0/dist/lang/de.umd.prod.js"></script>
+
+  <script>
+    Quasar.lang.set(Quasar.lang.de)
+
+    function wrapCsvValue(val, formatFn) {
+      let formatted = formatFn !== void 0
+        ? formatFn(val)
+        : val
+
+      formatted = formatted === void 0 || formatted === null
+        ? ''
+        : String(formatted)
+
+      formatted = formatted.split('"').join('""')
+      /**
+      * Excel accepts \n and \r in strings, but some other CSV parsers do not
+      * Uncomment the next two lines to escape new lines
+      */
+      // .split('\n').join('\\n')
+      // .split('\r').join('\\r')
+
+      return `"${formatted}"`
+    }
+
+    /*
+      Example kicking off the UI. Obviously, adapt this to your specific needs.
+      Assumes you have a <div id="q-app"></div> in your <body> above
+     */
+     const app = Vue.createApp({
+        el: '#q-app',
+      //hier sind die Daten des Views
+      data: function () {
+        return {
+          loading: false,
+          toggle: "0",
+          filter: "",
+          search: "*",
+          table_field: "user",
+          cat_table_field: ["user", "protocol"],
+          maxline: "50",
+          selected: [],
+          status: [],
+          separator: "cell",
+          pagination: { rowsPerPage: 0 },
+          me: {},
+          
+          data: [],
+          dialogUser: false,
+          userData: {
+            "id": "",
+            "username": "",
+            "salt": "",
+            "password": "",
+            "avatar": "",
+            "role": "",
+            "lastLogin": "",
+            "newPassword": "",
+            "valNewPassword": "",
+          },
+          idle: false,
+
+          //hier die Daten vom Server
+          title: "'<%= title %>'",
+        }
+      },
+
+      computed: {
+      },
+
+      //
+
+      created() {
+
+        this.getDataFromApi("me", "?json=true", "me");
+
+        if (this.search == "") {
+          this.search = "*";
+        };
+
+        this.onSearch();
+
+      },
+
+      mounted() {
+        // based on prepared DOM, initialize echarts instance
+      },
+      //
+      methods: {
+
+        //Daten vom Server async holen
+        getDataFromApi(iPath, iQuery, cData) {
+          me = this;
+          //me[cData] = {}
+          var myURL = window.origin + "/private/data/" + iPath + iQuery;
+          var xmlHttp = new XMLHttpRequest();
+          xmlHttp.open("GET", myURL, true);
+          xmlHttp.onload = function (e) {
+            if (xmlHttp.readyState === 4) {
+              if (xmlHttp.status === 200) {
+
+                me[cData] = JSON.parse(xmlHttp.responseText)["data"];
+
+                if (iPath == 'me') {
+                  me.me.avatar = me.me.avatar || '/static/avatare/avatar1.png';
+                }
+
+                //Index generieren
+                if (me[cData] != null && "forEach" in me[cData]) {
+                  me[cData].forEach((row, index) => {
+                    //row.index = index
+                    //row.amount = row.amount ? row.amount : 0.0
+
+                    if (me.selected[0] && me.selected[0].length != 0 && me.selected[0].id == row.id) {
+                      //selektierte Werte übernehmen
+                      me.selected[0] = row;
+                    }
+
+                  })
+                }
+
+                //console.log(xmlHttp.responseText);
+              } else {
+                me.data = [];
+                lMessage = "";
+                lMessage = JSON.parse(xmlHttp.responseText)["data"];
+                if (lMessage == "") {
+                  lMessage = xmlHttp.statusText;
+                }
+                console.error(lMessage);
+                me.$q.notify({
+                  message: 'Anfrage fehlerhaft:' + xmlHttp.status.toString() + " : " + lMessage,
+                  color: 'negative',
+                  icon: 'warning'
+                });
+              }
+            }
+          };
+          xmlHttp.onerror = function (e) {
+            me.data = [];
+            console.error(xmlHttp.statusText);
+            me.$q.notify({
+              message: 'Anfrage fehlerhaft:' + xmlHttp.status.toString() + ":" + xmlHttp.statusText,
+              color: 'negative',
+              icon: 'warning'
+            });
+          };
+
+          xmlHttp.send(null);
+        },
+
+        onDetail() {
+          if (this.selected.length == 0 || this.selected[0].id == '') {
+            this.$q.notify({
+              progress: true,
+              message: 'Please mark one line.',
+              color: 'warning',
+              actions: [
+                { label: 'OK', color: 'black', handler: () => { /* ... */ } }
+              ]
+            });
+            return;
+          }
+
+          if (this.table_field == "user") {
+            //table is user
+            this.userData = this.selected[0];
+            this.dialogUser = true;
+            return;
+          }
+
+          this.$q.notify({
+            message: 'Funktion "Detail" hier nicht unterstützt.',
+            color: 'negative',
+            icon: 'warning'
+          });
+        },
+
+        //Suche in der Liste
+        onSearch(props) {
+          console.log("Suche gedrückt")
+          this.loading = true;
+          if (this.search === "" || this.search === null) {
+            this.search = "*";
+          };
+          this.getDataFromApi(this.table_field, "?q=" + this.search.replaceAll("%", "*") + "&limit=" + this.maxline, "data");
+          this.loading = false;
+        },
+
+
+        //Export der Tabelle als CSV
+        exportTable() {
+          // naive encoding to csv format
+          const content = [this.columns.map(col => wrapCsvValue(col.label))].concat(
+            this.record.map(row => this.columns.map(col => wrapCsvValue(
+              typeof col.field === 'function'
+                ? col.field(row)
+                : row[col.field === void 0 ? col.name : col.field],
+              col.format
+            )).join(','))
+          ).join('\r\n')
+
+          const status = Quasar.exportFile(
+            'table-export.csv',
+            content,
+            'text/csv'
+          )
+
+          if (status !== true) {
+            this.$q.notify({
+              message: 'Browser denied file download...',
+              color: 'negative',
+              icon: 'warning'
+            })
+          }
+        },
+
+      },
+      // ...etc
+    });
+
+    app.use(Quasar)
+    Quasar.lang.set(Quasar.lang.de)
+    app.mount('#q-app')   
+
+  </script>
+</body>
+
+</html>
