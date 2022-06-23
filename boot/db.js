@@ -26,7 +26,9 @@ module.exports = async function () {
                 "role": "admin, api",
                 "avatar": "",
                 "password": JSON.stringify(hashedPassword),
-                "lastLogin": ""
+                "lastLogin": "",
+                "bearer": "",
+                "token":""
               });
             console.log(`new user defined: ${user.id}`)
           } catch (err) {

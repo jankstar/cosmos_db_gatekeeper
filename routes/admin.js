@@ -29,6 +29,10 @@ router.post('/data/:table',
                     if (!req.body.newPassword || !req.body.valNewPassword || req.body.newPassword != req.body.valNewPassword) {
                         throw "New Password invalid - reject all";
                     }
+
+                    let newToken = crypto.randomBytes(265);
+                    let lBearer = newToken.toString('base64')
+
                     var salt = crypto.randomBytes(16);
                     crypto.pbkdf2(req.body.newPassword, salt, 310000, 32, 'sha256',
                         async (err, hashedPassword) => {
@@ -42,7 +46,9 @@ router.post('/data/:table',
                                         "role": req.body.role || "new",
                                         "avatar": req.body.avatar || "",
                                         "password": JSON.stringify(hashedPassword),
-                                        "lastLogin": ""
+                                        "lastLogin": "",
+                                        "bearer": lBearer,
+                                        "token": ""
                                     });
                                 res.json({ data: user })
                             } catch (err) {
@@ -50,7 +56,7 @@ router.post('/data/:table',
                             }
                         });
                 } else {
-                    //chnage user
+                    //change user
                     const { resources: rows } = await db.User.items
                         .query(`SELECT * FROM c WHERE c.id = '${req.body.id}'`)
                         .fetchAll();
@@ -65,6 +71,10 @@ router.post('/data/:table',
                                 throw "New Password invalid - reject all";
                             }
 
+                            if (!rows[0].token) {
+                                let newToken = crypto.randomBytes(265);
+                                rows[0].bearer = newToken.toString('base64')
+                            }
                             var salt = Buffer.from(JSON.parse(rows[0].salt));
                             crypto.pbkdf2(req.body.newPassword, salt, 310000, 32, 'sha256',
                                 async (err, hashedPassword) => {

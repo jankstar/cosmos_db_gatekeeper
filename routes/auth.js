@@ -35,32 +35,32 @@ router.get('/login',
     res.redirect('/');
   });
 
-router.post('/new', function (req, res, next) {
-  var salt = crypto.randomBytes(16);
-  crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256',
-    async (err, hashedPassword) => {
-      if (err) { return next(err); }
-      try {
-        const { resource: user } = await db.User.items
-          .create({
-            "id": req.body.username,
-            "username": req.body.username,
-            "salt": JSON.stringify(salt),
-            "role": "new",
-            "avatar": "",
-            "password": JSON.stringify(hashedPassword),
-            "lastLogin": ""
-          });
+// router.post('/new', function (req, res, next) {
+//   var salt = crypto.randomBytes(16);
+//   crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256',
+//     async (err, hashedPassword) => {
+//       if (err) { return next(err); }
+//       try {
+//         const { resource: user } = await db.User.items
+//           .create({
+//             "id": req.body.username,
+//             "username": req.body.username,
+//             "salt": JSON.stringify(salt),
+//             "role": "new",
+//             "avatar": "",
+//             "password": JSON.stringify(hashedPassword),
+//             "lastLogin": ""
+//           });
 
-        req.login(user, function (err) {
-          if (err) { return next(err); }
-          res.redirect('/private/home');
-        });
-      } catch (err) {
-        next(err);
-      }
-    });
-});
+//         req.login(user, function (err) {
+//           if (err) { return next(err); }
+//           res.redirect('/private/home');
+//         });
+//       } catch (err) {
+//         next(err);
+//       }
+//     });
+// });
 
 router.post('/login',
   //check

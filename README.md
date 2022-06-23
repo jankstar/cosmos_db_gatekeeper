@@ -9,6 +9,7 @@ COSMOSDBKEY = '<cosmos-db-key>'
 COSMOSDB = '<db-name>'
 ```
 
+## container
 A container "user" is needed, with the fields 
 ```json
 {
@@ -23,12 +24,15 @@ A container "user" is needed, with the fields
 ```
 And container "protocol" for logging.
 
-The parameter mapping of ejs was changed because of VUE to
-``` 
-ejs.openDelimiter = "'<";
-ejs.closeDelimiter = ">'";
-```
-so that the following placeholders for e.g. a varibale "message" are to be defined in the client coding:
-```
-messages: "'<%= message %>'"
-```
+Wenn die db/container initialisiert wird, dann wird automatisch eine User "admin" mit dem Password "admin" angelegt.
+Achtung: hier muss anschließend über die Admin-Konsole das Passwort geändert werden!
+
+When the db/container is initialized, then a user "admin" with the password "admin" is automatically created.
+Attention: here the password must be changed afterwards via the admin console!
+
+## role
+The roles "admin" and "api" are distinguished.
+
+admin: with this role, users can be defined for access.<br>
+api: with this role the api can be used.
+

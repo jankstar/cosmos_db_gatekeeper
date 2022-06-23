@@ -2,8 +2,6 @@ const express = require('express');
 const avatarePath = require("path").join(__dirname, "../static/avatare");
 const fs = require("fs");
 const crypto = require('crypto');
-const { graphqlHTTP } = require('express-graphql');
-const apiRouter = require('../src/api');
 const db = require('../src/db');
 const { TITLE } = require('../config.js');
 
@@ -86,6 +84,10 @@ router.get('/data/:table',
                 res.json({ data: avatarList });
             }
             else if (table && table == 'user') {
+                if (!req.user.role.includes('admin')) {
+                    if (qWhere) { qWhere = qWhere + ` AND c.id = '${req.user.id}'` }
+                    else { qWhere = `WHERE c.id = '${req.user.id}'` }
+                }
                 var { resources: rows } = await db.User.items
                     .query(`SELECT * FROM c ${qWhere} OFFSET ${offsent} LIMIT ${limit}`)
                     .fetchAll();
@@ -95,8 +97,12 @@ router.get('/data/:table',
 
             }
             else if (table && table == 'protocol') {
+                if (!req.user.role.includes('admin')) {
+                    if (qWhere) { qWhere = qWhere + ` AND c.user = '${req.user.id}'` }
+                    else { qWhere = `WHERE c.user = '${req.user.id}'` }
+                }
                 var { resources: rows } = await db.Protocol.items
-                    .query(`SELECT * FROM c ${qWhere} OFFSET ${offsent} LIMIT ${limit}`)
+                    .query(`SELECT * FROM c ${qWhere}  OFFSET ${offsent} LIMIT ${limit}`)
                     .fetchAll();
                 rows = rows || []
                 rows = cleanUp(rows);
@@ -170,10 +176,6 @@ router.post('/data/:table',
         }
     });
 
-router.use('/api',
-    graphqlHTTP({
-        schema: apiRouter.schema,
-        graphiql: true,
-    }));
+
 
 module.exports = router;
