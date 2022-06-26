@@ -9,9 +9,10 @@
 
 <head>
   <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
-    <link href="https://cdn.jsdelivr.net/npm/quasar@2.1.5/dist/quasar.prod.css" rel="stylesheet" type="text/css">
-  </head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet"
+    type="text/css">
+  <link href="https://cdn.jsdelivr.net/npm/quasar@2.1.5/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+</head>
 
 <!-- Notice lang="sass" -->
 <style lang="sass">
@@ -66,7 +67,7 @@
           <div class="row">
             <q-space></q-space>
             <q-select flat dense v-model="table_field" hint="table" outlined flat :options="cat_table_field"
-              class="q-ml-sm" @update:model-value ="onSearch()">
+              class="q-ml-sm" @update:model-value="onSearch()">
             </q-select>
 
             <q-input flat dense v-model="search" hint="field:value - Example 'username:admin'" style="min-width: 50%;"
@@ -123,21 +124,55 @@
 
           </div>
 
-          <!-- subdialog upload-->
+          <!-- subdialog user-->
           <q-dialog v-model="dialogUser" persistent>
-            <q-card style="min-width: 500px; height: 620px;">
+            <q-card style="min-width: 500px; height: 790px;">
               <q-card-section>
                 <div class="text-h6">User Data</div>
-                <div class="q-gutter-md col items-start">
-                  <q-input v-if="userData.id != ''" v-model="userData.username" label="username" readonly></q-input>
-                  <q-input v-if="userData.id == ''" v-model="userData.username" label="username" ></q-input>
-                  <q-input v-model="userData.avatar" label="avatar"></q-input>
-                  <q-input v-model="userData.role" label="role"></q-input>
-                  <q-input v-if="userData.id != ''" v-model="userData.password" label="password" readonly></q-input>
-                  <q-input v-model="userData.lastLogin" label="lastLogin" readonly></q-input>
-                  <q-input v-model="userData.newPassword" label="New Password" type="password"></q-input>
-                  <q-input v-model="userData.valNewPassword" label="Validation" type="password"></q-input>
-                </div>
+                <div class="q-gutter-md col">
+                  <q-tabs v-model="tab" dense class="text-grey" active-color="primary" indicator-color="primary"
+                    align="justify" narrow-indicator>
+                    <q-tab name="main" icon="manage_accounts" label="main"></q-tab>
+                    <q-tab name="permission" icon="rule" label="permisssion"></q-tab>
+                  </q-tabs>
+
+                  <q-tab-panels v-model="tab" animated>
+                    <q-tab-panel name="main">
+                      <q-input v-if="userData.id != ''" v-model="userData.username" label="username" readonly></q-input>
+                      <q-input v-if="userData.id == ''" v-model="userData.username" label="username"></q-input>
+                      <!--q-input v-model="userData.avatar" label="avatar"></q-input-->
+                      <q-input v-model="userData.role" label="role"></q-input>
+                      <q-input v-if="userData.id != ''" v-model="userData.password" label="password" readonly></q-input>
+                      <q-input v-model="userData.lastLogin" label="lastLogin" readonly></q-input>
+                      <q-input v-model="userData.newPassword" label="New Password" type="password"></q-input>
+                      <q-input v-model="userData.valNewPassword" label="Validation" type="password"></q-input>
+                    </q-tab-panel>
+
+                    <q-tab-panel name="permission">
+                      <div class="row" style="width: 100%;margin-top: 3%;">
+                        <div class="column" style="margin: 1%;">
+                          <q-btn label="New" @click="onNewBearer('user')" color="yellow" text-color="black"></q-btn>
+                          <q-btn icon="content_copy" @click="onClipboard('user')" color="primary"></q-btn>
+                        </div>
+                        <q-input label="Bearer" v-model="userData.bearer" filled type="textarea" readonly
+                          style="width: 80%;"></q-input>
+                      </div>
+                      <div class="row" style="width: 100%;margin-top: 3%;">
+                        <div class="column" style="margin: 1%;">
+                          <q-btn icon="add" @click="onPermission('new')" color="primary" style="margin-top: 1ev;">
+                          </q-btn>
+                          <q-btn icon="edit" @click="onPermission('edit')" color="primary" style="margin-top: 1ev;">
+                          </q-btn>
+                          <q-btn icon="remove" @click="onPermission('remove')" color="primary" style="margin-top: 1ev;">
+                          </q-btn>
+                        </div>
+                        <q-table style="width: 370px;" title="permissions" :rows="userData.permissions" row-key="id"
+                          :rows-per-page-options="[0]" :separator="separator" selection="single"
+                          v-model:selected="selectedPermission" virtual-scroll></q-table>
+                      </div>
+                    </q-tab-panel>
+                  </q-tab-panels>
+
               </q-card-section>
               <q-card-actions align="right" class="text-primary">
                 <div v-show="idle">
@@ -145,6 +180,7 @@
                 </div>
                 <q-space></q-space>
                 <q-btn label="Save" @click="onSave('user')" color="primary"></q-btn>
+                
                 <q-btn label="Cancel" v-close-popup color="primary"></q-btn>
               </q-card-actions>
             </q-card>
@@ -193,8 +229,8 @@
       Example kicking off the UI. Obviously, adapt this to your specific needs.
       Assumes you have a <div id="q-app"></div> in your <body> above
      */
-     const app = Vue.createApp({
-        el: '#q-app',
+    const app = Vue.createApp({
+      el: '#q-app',
       //hier sind die Daten des Views
       data: function () {
         return {
@@ -206,13 +242,15 @@
           cat_table_field: ["user", "protocol"],
           maxline: "50",
           selected: [],
+          selectedPermission: [],
           status: [],
           separator: "cell",
           pagination: { rowsPerPage: 0 },
           me: {},
-          
+
           data: [],
           dialogUser: false,
+          tab: "main",
           userData: {
             "id": "",
             "username": "",
@@ -223,6 +261,10 @@
             "lastLogin": "",
             "newPassword": "",
             "valNewPassword": "",
+            "bearer": "",
+            "token": "",
+            "database": "",
+            "permissions": [],
           },
           idle: false,
 
@@ -362,6 +404,7 @@
           if (this.table_field == "user") {
             //table is user
             this.userData = this.selected[0];
+            this.userData.permission_text = JSON.stringify(this.userData.permissions, undefined, 4)
             this.dialogUser = true;
             return;
           }
@@ -484,7 +527,7 @@
               return;
 
             } else {
-
+              delete this.userData.permission_text
               this.dialogUser = this.setDataToApi("user?", JSON.stringify(this.userData));
               this.onSearch()
               return;
@@ -497,6 +540,26 @@
             icon: 'warning'
           });
         },
+
+        onNewBearer(iTable) {
+          if (iTable != 'user') { return }
+          this.userData.bearer = ""
+          this.userData.token = ""
+          this.onSave(iTable)
+
+        },
+
+
+        onClipboard(iTable) {
+          navigator.clipboard.writeText(this.userData.bearer)
+          this.$q.notify({
+            message: 'In Zwischenablage übernommen.',
+            color: 'positiv',
+            icon: 'info'
+          });
+        },
+
+        onPermission(iAction) { },
 
         //Suche in der Liste
         onSearch(props) {
@@ -543,7 +606,7 @@
 
     app.use(Quasar)
     Quasar.lang.set(Quasar.lang.de)
-    app.mount('#q-app')   
+    app.mount('#q-app')
 
   </script>
 </body>

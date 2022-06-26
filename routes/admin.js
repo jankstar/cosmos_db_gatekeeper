@@ -30,7 +30,7 @@ router.post('/data/:table',
                         throw "New Password invalid - reject all";
                     }
 
-                    let newToken = crypto.randomBytes(265);
+                    let newToken = crypto.randomBytes(1024);
                     let lBearer = newToken.toString('base64')
 
                     var salt = crypto.randomBytes(16);
@@ -60,8 +60,15 @@ router.post('/data/:table',
                     const { resources: rows } = await db.User.items
                         .query(`SELECT * FROM c WHERE c.id = '${req.body.id}'`)
                         .fetchAll();
+                    //es muss Rolle übergeben werden
                     if (rows && rows[0] && req.body.role) {
                         rows[0].role = req.body.role
+                        if (req.body.bearer == "") {
+                            //neuer bearer token
+                            let newToken = crypto.randomBytes(1024);
+                            rows[0].bearer = newToken.toString('base64')
+                            rows[0].token = ""
+                        }
                         if (!req.body.newPassword) {
                             db.User.items.upsert(rows[0]);
                             res.json({ data: rows[0] })
@@ -70,9 +77,8 @@ router.post('/data/:table',
                             if (!req.body.newPassword || !req.body.valNewPassword || req.body.newPassword != req.body.valNewPassword) {
                                 throw "New Password invalid - reject all";
                             }
-
-                            if (!rows[0].token) {
-                                let newToken = crypto.randomBytes(265);
+                            if (!rows[0].bearer) {
+                                let newToken = crypto.randomBytes(1024);
                                 rows[0].bearer = newToken.toString('base64')
                             }
                             var salt = Buffer.from(JSON.parse(rows[0].salt));
